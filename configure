@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Module for Desktop Environments, that do not have Mousewheel Accleration Settings.
+
+####################################
+# Create config for imwheel
+####################################
+function create_config() {
+  if [ ! -f ~/.imwheelrc ]; then
+
+  cat >~/.imwheelrc<<EOF
+".*"
+None,      Up,   Button4, 1
+None,      Down, Button5, 1
+Control_L, Up,   Control_L|Button4
+Control_L, Down, Control_L|Button5
+Shift_L,   Up,   Shift_L|Button4
+Shift_L,   Down, Shift_L|Button5
+EOF
+  fi
+}
+
+####################################
+# Drawing the Graphical User Interface
+####################################
+function draw_gui() {
+    CURRENT_VALUE=$(awk -F 'Button4,' '{print $2}' ~/.imwheelrc)
+
+    NEW_VALUE=$( \
+      zenity \
+      --scale \
+      --window-icon=info \
+      --ok-label=Anwenden \
+      --title="Mausrad Geschwindigkeit" \
+      --text "Geschwindigkeit:" \
+      --min-value=1 \
+      --max-value=100 \
+      --value="$CURRENT_VALUE" \
+      --step 1 \
+      )
+
+    if [ "$NEW_VALUE" == "" ]; then
+      exit 0
+    fi
+}
+create_config
+draw_gui
+
+sed -i "s/\($TARGET_KEY *Button4, *\).*/\1$NEW_VALUE/" ~/.imwheelrc
+sed -i "s/\($TARGET_KEY *Button5, *\).*/\1$NEW_VALUE/" ~/.imwheelrc
+
+echo "Du hast die Geschwindigkeit auf [ ${NEW_VALUE} ] gesetzt."
+imwheel -kill >> /dev/null
+
